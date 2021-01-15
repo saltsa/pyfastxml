@@ -1,3 +1,4 @@
+import gc
 import io
 import time
 import psutil
@@ -16,7 +17,6 @@ class Grabber(sh.ContentHandler):
     def startElement(self, tag, attrib):
         if tag == "muntagi":
             attrib = {self.string_pool.get(k, k): v for (k, v) in attrib.items()}
-            # attrib = dict(attrib)
             self.data[attrib["id"]] = attrib
 
 
@@ -35,6 +35,25 @@ def m2():
     return results
 
 
+def m3():
+    import fastxml
+
+    tag = "muntagi"
+    with open("example.xml", "rb") as f:
+        els = []
+        el = None
+        for r in fastxml.parse_file(f, utf8=True):
+            a = r[0]
+            if a == 1:  # new tag
+                if r[1] == tag:
+                    el = {}
+                    els.append(el)
+            if r[0] == 3:  # attribute
+                if r[1] == tag:
+                    el[r[2]] = r[3]
+    return {e["id"]: e for e in els}
+
+
 def test(m):
     t0 = time.time()
     result = m()
@@ -46,4 +65,8 @@ def test(m):
 
 
 if __name__ == "__main__":
-    test(globals()[sys.argv[1]])
+    name = sys.argv[1]
+    print("***", name)
+    for x in range(50):
+        test(globals()[name])
+        gc.collect()

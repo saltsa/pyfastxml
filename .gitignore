@@ -1,1 +1,6 @@
+*.py[cod]
+*.so
 *.xml
+build
+fastxml.c
+fil-result
