@@ -2,6 +2,7 @@ import gc
 import time
 import psutil
 import sys
+import weakref
 from itertools import islice
 import m_fastxml, m_sax, m_lxml
 
@@ -26,20 +27,35 @@ expected_slice = [
 ]
 
 
-def test(m):
+def dump(name, t):
+    print("***", name)
+    if t:
+        print("Duration:", t)
+    print("Memory:  ", psutil.Process().memory_info())
+    print("Objects: ", len(gc.get_objects()))
+    new_objects = gc.get_objects()
+    for obj in new_objects:
+        if id(obj) not in static_object_ids:
+            print(repr(obj)[:64])
+
+
+def test(name, m):
     t0 = time.time()
     result = m()
     t = time.time() - t0
     assert len(result) == expected_n
     slice = list(islice(result.items(), 0, 10))
     assert slice == expected_slice
-    print(t)
-    print(psutil.Process().memory_info())
+    del slice
+    dump(name, t)
 
 
 if __name__ == "__main__":
     name = sys.argv[1]
-    print("***", name)
     for x in range(5):
-        test(fns[name])
+        static_object_ids = frozenset(id(obj) for obj in gc.get_objects())
+        print("Static: ", len(static_object_ids))
+        if x == 0:
+            dump("Initial", 0)
+        test(name, fns[name])
         gc.collect()

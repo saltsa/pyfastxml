@@ -1,6 +1,7 @@
-def m3():
-    import fastxml
+import fastxml
 
+
+def m3():
     tag = "muntagi"
     with open("example.xml", "rb") as f:
         els = []
