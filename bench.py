@@ -1,69 +1,38 @@
 import gc
-import io
 import time
 import psutil
-import xml.sax as sax
-import xml.sax.handler as sh
-import lxml.etree as ET
 import sys
 from itertools import islice
+import m_fastxml, m_sax, m_lxml
 
+fns = {
+    "m1": m_sax.m1,
+    "m2": m_lxml.m2,
+    "m3": m_fastxml.m3,
+}
 
-class Grabber(sh.ContentHandler):
-    def __init__(self):
-        self.data = {}
-        self.string_pool = {}
-
-    def startElement(self, tag, attrib):
-        if tag == "muntagi":
-            attrib = {self.string_pool.get(k, k): v for (k, v) in attrib.items()}
-            self.data[attrib["id"]] = attrib
-
-
-def m1():
-    sg = Grabber()
-    sax.parse("example.xml", handler=sg)
-    result = sg.data
-    return result
-
-
-def m2():
-    results = {}
-    for event, elem in ET.iterparse("example.xml", events=("start",), tag="muntagi"):
-        results[elem.attrib["id"]] = dict(elem.attrib)
-        elem.clear()
-    return results
-
-
-def m3():
-    import fastxml
-
-    tag = "muntagi"
-    with open("example.xml", "rb") as f:
-        els = []
-        el = None
-
-        def handle(*r):
-            nonlocal el
-            a = r[0]
-            if a == 1:  # new tag
-                if r[1] == tag:
-                    el = {}
-                    els.append(el)
-            if r[0] == 3:  # attribute
-                if r[1] == tag:
-                    el[r[2]] = r[3]
-
-        fastxml.parse(f.read, handle, utf8=True, chunk_size=524288)
-    return {e["id"]: e for e in els}
+expected_n = 800_000
+expected_slice = [
+    ("0", {"id": "0", "a": "0"}),
+    ("1", {"id": "1", "a": "331"}),
+    ("2", {"id": "2", "a": "662"}),
+    ("3", {"id": "3", "a": "993"}),
+    ("4", {"id": "4", "a": "1324"}),
+    ("5", {"id": "5", "a": "1655"}),
+    ("6", {"id": "6", "a": "1986"}),
+    ("7", {"id": "7", "a": "2317"}),
+    ("8", {"id": "8", "a": "2648"}),
+    ("9", {"id": "9", "a": "2979"}),
+]
 
 
 def test(m):
     t0 = time.time()
     result = m()
     t = time.time() - t0
-    print(len(result))
-    print(list(islice(result.items(), 0, 10)))
+    assert len(result) == expected_n
+    slice = list(islice(result.items(), 0, 10))
+    assert slice == expected_slice
     print(t)
     print(psutil.Process().memory_info())
 
@@ -72,5 +41,5 @@ if __name__ == "__main__":
     name = sys.argv[1]
     print("***", name)
     for x in range(5):
-        test(globals()[name])
+        test(fns[name])
         gc.collect()
