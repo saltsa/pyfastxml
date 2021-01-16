@@ -28,6 +28,7 @@ class Token:
     text = attr.ib(default=None)
 
     _type = attr.ib(default=None)
+
     def empty(self):
         return not any((self.tag, self.attributes, self.text))
 
@@ -102,12 +103,12 @@ class Decoder:
             # starting <?xml... tag
             # TODO: Validate this
             self._until_end_tag()
-            return Token("xml")
+            return Token(type="xml")
         elif b == '!':
             print("comment or cdata")
             # TODO: Fix this, does not handle all cases
             self._until_end_tag()
-            return Token("!", type="comment")
+            return Token(type="comment")
 
         self._ungetc()
 
@@ -123,7 +124,6 @@ class Decoder:
                 if b != '>':
                     raise XMLSyntaxError("syntax error")
                 return Token(tag=tag_name, attributes=attributes, type="startend")
-                break
             elif b == '>':
                 break
 
@@ -205,7 +205,7 @@ def get_dict(dec):
             print("t is none")
             break
         if t.empty():
-            #print("t is empty")
+            # print("t is empty")
             break
         
         # TODO: ugly
@@ -231,12 +231,13 @@ if __name__ == '__main__':
     print("decoder...")
     dec = Decoder(io.StringIO(d))
 
+    print("get dict...")
     start = time.time()
     dicts = get_dict(dec)
     end = time.time()
     
-    for d in dicts:
-        print(d)
+    for key, val in dicts.items():
+        print(f"{key} -> {val}")
 
     print("item count was {}".format(len(dicts)))
     print("parsing took {} seconds".format(end-start))
