@@ -4,12 +4,13 @@ import psutil
 import sys
 import weakref
 from itertools import islice
-import m_fastxml, m_sax, m_lxml
+import m_fastxml, m_sax, m_lxml, m_diyxml
 
 fns = {
     "m1": m_sax.m1,
     "m2": m_lxml.m2,
     "m3": m_fastxml.m3,
+    "m4": m_diyxml.m4,
 }
 
 expected_n = 800_000
